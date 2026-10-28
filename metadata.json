@@ -1,0 +1,6 @@
+{
+  "name": "RATBV Feedback QR App",
+  "description": "Sistem digital de feedback pentru călătorii transportului public RATBV Brașov prin coduri QR în autobuze și troleibuze, cu raportare incidente și panou de dispecerat.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

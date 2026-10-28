@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+/* ============================================
+   RATBV Brașov - Custom Styles
+   ============================================ */
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --color-ratbv-blue: #1e40af;
+  --color-ratbv-light: #3b82f6;
+  --color-ratbv-dark: #1e293b;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+
+/* Star rating animation */
+@keyframes star-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.star-pop {
+  animation: star-pop 0.3s ease-in-out;
+}
+
+/* QR Code pulse animation */
+@keyframes qr-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  50% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
+}
+
+.qr-pulse {
+  animation: qr-pulse 2s infinite;
+}
+
+/* Success checkmark animation */
+@keyframes checkmark-draw {
+  0% { stroke-dashoffset: 100; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.checkmark-animate {
+  stroke-dasharray: 100;
+  animation: checkmark-draw 0.6s ease-in-out forwards;
+}
+
+/* Scanner line animation */
+@keyframes scan-line {
+  0% { top: 0; }
+  50% { top: calc(100% - 3px); }
+  100% { top: 0; }
+}
+
+.scan-line {
+  animation: scan-line 2.5s ease-in-out infinite;
+}
+
+/* Result flash animations */
+@keyframes flash-green {
+  0% { background-color: rgba(16, 185, 129, 0); }
+  20% { background-color: rgba(16, 185, 129, 0.1); }
+  100% { background-color: rgba(16, 185, 129, 0.05); }
+}
+
+@keyframes flash-red {
+  0% { background-color: rgba(239, 68, 68, 0); }
+  20% { background-color: rgba(239, 68, 68, 0.1); }
+  100% { background-color: rgba(239, 68, 68, 0.05); }
+}
+
+.flash-success {
+  animation: flash-green 0.5s ease-out;
+}
+
+.flash-error {
+  animation: flash-red 0.5s ease-out;
+}
