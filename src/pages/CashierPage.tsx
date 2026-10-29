@@ -48,6 +48,7 @@ export default function CashierPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualCode, setManualCode] = useState('');
   const [scannerActive, setScannerActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -63,6 +64,19 @@ export default function CashierPage() {
     // Opri scanner-ul temporar
     setIsProcessing(true);
     const trimmedCode = code.trim().toUpperCase();
+
+    // Oprește camera în timp ce validăm/afișăm rezultatul
+    // (altfel stream-ul video rămâne activ și blochează repornirea corectă)
+    try {
+      if (scannerRef.current) {
+        await scannerRef.current.stop();
+        scannerRef.current.clear();
+      }
+    } catch (e) {
+      // ignorăm - scanner-ul putea fi deja oprit
+    }
+    scannerRef.current = null;
+    setScannerActive(false);
 
     try {
       // Căutare în baza de date
@@ -122,20 +136,44 @@ export default function CashierPage() {
     setIsProcessing(false);
     setManualCode('');
     setCountdown(0);
-
-    // Repornire scanner dacă e în modul scanner
-    if (mode === 'scanner' && scannerContainerRef.current) {
-      startScanner();
-    }
-  }, [mode]);
+    // Repornirea scanner-ului este preluată de useEffect-ul care urmărește
+    // (mode === 'scanner' && !scanResult && !isProcessing), după ce containerul e din nou montat.
+  }, []);
 
   // ============================================
   // SCANNER QR (html5-qrcode)
   // ============================================
+
+  // Verificări preliminare: camera web necesită HTTPS (sau localhost)
+  const isSecureContext =
+    typeof window !== 'undefined' &&
+    (window.isSecureContext ||
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1');
+
   const startScanner = useCallback(async () => {
     if (scannerRef.current || !scannerContainerRef.current) return;
 
+    // Pe HTTP (fără localhost), browserul BLOCHEAZĂ camera — afișează un mesaj clar
+    if (!isSecureContext) {
+      setCameraError(
+        'Accesul la cameră necesită HTTPS. Deschide site-ul prin adresa „https://...” de pe Vercel, nu prin IP sau link HTTP.'
+      );
+      setScannerActive(false);
+      return;
+    }
+
+    // Verificare existență API cameră (lipsește pe browsere vechi / WebView fără permisiuni)
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError(
+        'Acest browser nu expune API-ul de cameră (mediaDevices). Încearcă Chrome/Safari/Firefox actualizat, sau deschide link-ul în browserul normal, nu într-o aplicație (ex: Instagram/WhatsApp).'
+      );
+      setScannerActive(false);
+      return;
+    }
+
     try {
+      setCameraError(null);
       const html5QrCode = new Html5Qrcode('qr-scanner-container');
       scannerRef.current = html5QrCode;
 
@@ -143,8 +181,12 @@ export default function CashierPage() {
         { facingMode: 'environment' }, // Camera spate
         {
           fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1.0,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+            // Cvadrul de scanare se adaptează la dimensiunea reală a preview-ului
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const side = Math.max(160, Math.floor(minEdge * 0.7));
+            return { width: side, height: side };
+          },
         },
         (decodedText) => {
           // Cod QR detectat cu succes
@@ -156,11 +198,33 @@ export default function CashierPage() {
       );
 
       setScannerActive(true);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Scanner start error:', err);
+      scannerRef.current = null;
       setScannerActive(false);
+
+      const name = err?.name || '';
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        setCameraError(
+          'Accesul la cameră a fost REFUZAT. Redresează pagina și apasă „Permite” când browserul cere voie pentru cameră.'
+        );
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        setCameraError('Nu am găsit nici o cameră disponibilă pe acest dispozitiv.');
+      } else if (name === 'NotReadableError' || name === 'TrackStartError') {
+        setCameraError(
+          'Camera este folosită de altă aplicație (ex: alt tab, Zoom, aplicația camerei). Închide celelalte și reîncearcă.'
+        );
+      } else if (name === 'OverconstrainedError') {
+        setCameraError(
+          'Camera solicitată nu este disponibilă. Folosește modul „Manual” sau reîncearcă.'
+        );
+      } else {
+        setCameraError(
+          `Nu am putut porni camera (${name || 'eroare necunoscută'}). Folosește modul „Manual” ca să tastezi codul.`
+        );
+      }
     }
-  }, [processCode]);
+  }, [processCode, isSecureContext]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current) {
@@ -188,22 +252,30 @@ export default function CashierPage() {
     };
   }, []);
 
-  // Pornire scanner la montare
+  // Oprire pornitor automat când scanner-ul nu e vizibil (mod manual sau rezultat afișat)
   useEffect(() => {
-    if (mode === 'scanner' && !scanResult) {
-      const timer = setTimeout(() => startScanner(), 300);
+    if (mode !== 'scanner' || scanResult) {
+      stopScanner();
+    }
+  }, [mode, scanResult, stopScanner]);
+
+  // Pornire scanner doar când containerul este montat și vizibil
+  useEffect(() => {
+    if (mode === 'scanner' && !scanResult && !isProcessing) {
+      // delay mai mare = timp suficient ca html5-qrcode să apuce să-și golească
+      // containerul după stop(), altfel start() dă eșec silențios pe mobil
+      const timer = setTimeout(() => startScanner(), 600);
       return () => clearTimeout(timer);
     }
-  }, [mode, scanResult, startScanner]);
+  }, [mode, scanResult, isProcessing, startScanner]);
 
   // Schimbare mod
   const switchMode = async (newMode: 'scanner' | 'manual') => {
-    if (newMode === 'manual') {
-      await stopScanner();
-    }
+    await stopScanner();
     setMode(newMode);
     setScanResult(null);
     setManualCode('');
+    setCameraError(null);
   };
 
   // Submit manual
@@ -465,14 +537,45 @@ export default function CashierPage() {
                     className="w-full h-full"
                   />
 
-                  {/* Overlay cu colțuri */}
+                  {/* Overlay: inițializare SAU eroare cameră */}
                   {!scannerActive && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-                      <div className="text-center">
-                        <Camera size={48} className="text-slate-500 mx-auto mb-3" />
-                        <p className="text-slate-400 text-sm">Se inițializează camera...</p>
-                        <p className="text-slate-500 text-xs mt-1">Permiteți accesul la cameră</p>
-                      </div>
+                    <div className="absolute inset-0 flex items-center justify-center bg-slate-800 p-4">
+                      {cameraError ? (
+                        <div className="text-center">
+                          <AlertTriangle size={40} className="text-amber-400 mx-auto mb-3" />
+                          <p className="text-amber-300 text-sm font-semibold mb-2">
+                            Camera nu este disponibilă
+                          </p>
+                          <p className="text-slate-300 text-xs leading-relaxed mb-4">
+                            {cameraError}
+                          </p>
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => {
+                                setCameraError(null);
+                                startScanner();
+                              }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium transition-colors"
+                            >
+                              <RotateCcw size={14} />
+                              Reîncearcă
+                            </button>
+                            <button
+                              onClick={() => switchMode('manual')}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium transition-colors"
+                            >
+                              <Keyboard size={14} />
+                              Introdu manual
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <Camera size={48} className="text-slate-500 mx-auto mb-3" />
+                          <p className="text-slate-400 text-sm">Se inițializează camera...</p>
+                          <p className="text-slate-500 text-xs mt-1">Permiteți accesul la cameră</p>
+                        </div>
+                      )}
                     </div>
                   )}
 
