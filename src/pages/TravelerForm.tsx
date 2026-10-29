@@ -701,7 +701,21 @@ export default function TravelerForm() {
                     Introdu codul de 6 cifre primit prin email la {email}
                   </p>
                 </div>
-
+                {demoTestCode && (
+                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
+                    <p className="text-xs text-emerald-800 font-medium">
+                      💡 <strong>Mod Test / Demo:</strong> Codul tău este{' '}
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode(demoTestCode)}
+                        className="font-mono font-bold text-sm tracking-wider bg-white px-2.5 py-0.5 rounded border border-emerald-300 hover:bg-emerald-100 transition-colors ml-1 cursor-pointer"
+                        title="Apasă pentru completare automată"
+                      >
+                        {demoTestCode}
+                      </button>
+                    </p>
+                  </div>
+                )}
                 
 
                 <div className="relative">
