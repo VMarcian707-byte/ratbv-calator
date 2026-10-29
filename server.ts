@@ -1,4 +1,7 @@
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -9,6 +12,9 @@ import { sendOTP as sendEmailOTP, verifyOTP as verifyEmailOTP, cleanupExpiredOTP
 import { sendOTP as sendSmsOTP, verifyOTP as verifySmsOTP, cleanupExpiredOTPs as cleanupExpiredSmsOTPs } from './lib/sms.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
@@ -124,23 +130,31 @@ app.get('/api/health', (req, res) => {
 });
 
 // ============================================
-// START SERVER WITH VITE DEV MIDDLEWARE
+// START SERVER WITH VITE DEV MIDDLEWARE / STATIC
 // ============================================
 async function startServer() {
   const server = http.createServer(app);
+  const distPath = path.join(__dirname, 'dist');
+  const isProduction = process.env.NODE_ENV === 'production' && fs.existsSync(distPath);
 
-  const vite = await createViteServer({
-    server: {
-      middlewareMode: true,
-      hmr: false
-    },
-    appType: 'spa'
-  });
-
-  app.use(vite.middlewares);
+  if (!isProduction) {
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
+      appType: 'spa'
+    });
+    app.use(vite.middlewares);
+  } else {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n🚀 RATBV Server running on http://0.0.0.0:${PORT}`);
+    console.log(`\n🚀 RATBV Server running on http://0.0.0.0:${PORT} (${isProduction ? 'production' : 'development'})`);
   });
 }
 

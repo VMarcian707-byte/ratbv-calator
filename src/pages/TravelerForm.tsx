@@ -12,7 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Phone, MessageSquare, ChevronRight, ChevronLeft, Check, QrCode, AlertCircle, Bus, Download, Sparkles } from 'lucide-react';
+import { Star, Phone, MessageSquare, ChevronRight, ChevronLeft, Check, QrCode, AlertCircle, Bus, Download, Sparkles, Mail } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   generateQrCodeId,
@@ -21,7 +21,6 @@ import {
   insertResponse,
   isDemoMode,
 } from '../lib/supabase';
-import { Mail } from 'lucide-react';
 
 // ============================================
 // COMPONENTE AUXILIARE
