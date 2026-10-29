@@ -674,7 +674,7 @@ export default function TravelerForm() {
                 </div>
 
                 <p className="text-xs text-slate-400 mt-3 text-center">
-                  🔒 Email-ul tău este folosit doar pentru a preveni duplicatele.
+                  🔒 Email-ul tău este folosit doar pentru a preveni fraudele.
                 </p>
               </motion.div>
             )}
@@ -702,21 +702,7 @@ export default function TravelerForm() {
                   </p>
                 </div>
 
-                {demoTestCode && (
-                  <div className="mb-4 bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center">
-                    <p className="text-xs text-emerald-800 font-medium">
-                      💡 <strong>Mod Test / Demo:</strong> Codul tău este{' '}
-                      <button
-                        type="button"
-                        onClick={() => setOtpCode(demoTestCode)}
-                        className="font-mono font-bold text-sm tracking-wider bg-white px-2.5 py-0.5 rounded border border-emerald-300 hover:bg-emerald-100 transition-colors ml-1 cursor-pointer"
-                        title="Apasă pentru completare automată"
-                      >
-                        {demoTestCode}
-                      </button>
-                    </p>
-                  </div>
-                )}
+                
 
                 <div className="relative">
                   <input
@@ -856,7 +842,7 @@ export default function TravelerForm() {
 
         {/* Footer */}
         <p className="text-center text-xs text-slate-400 mt-4">
-          © 2024 RATBV Brașov • Transport public de calitate
+          © 2026 RATBV Brașov
         </p>
       </div>
     </div>
