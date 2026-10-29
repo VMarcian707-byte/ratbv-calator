@@ -624,7 +624,7 @@ export default function TravelerForm() {
                     Adresa ta de email
                   </h2>
                   <p className="text-sm text-slate-500 mt-1">
-                    Pentru verificare și prevenirea duplicatelor
+                    Pentru verificare și prevenirea fraudelor
                   </p>
                 </div>
 
