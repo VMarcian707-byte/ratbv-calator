@@ -154,7 +154,7 @@ export default function TravelerForm() {
     } catch (error) {
       console.warn('Backend email API unreachable, fallback to demo mode:', error);
       // Fallback în mod demo pentru reziliență deplină
-      const fallbackCode = '123456';
+      const fallbackCode = '596561';
       sessionStorage.setItem('ratbv_demo_otp_' + email.trim().toLowerCase(), fallbackCode);
       setDemoTestCode(fallbackCode);
       setEmailSent(true);
@@ -234,7 +234,7 @@ export default function TravelerForm() {
     } catch (error) {
       console.warn('Verificare server indisponibilă, fallback la mod demo:', error);
       const localCode = sessionStorage.getItem('ratbv_demo_otp_' + email.trim().toLowerCase()) || demoTestCode || '596561';
-      if (otpCode === localCode || otpCode === '123456') {
+      if (otpCode === localCode || otpCode === '596561') {
         await finalizeSuccessfulVerification();
       } else {
         setOtpError('Cod invalid. Încercați din nou.');
