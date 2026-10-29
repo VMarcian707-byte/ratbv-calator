@@ -14,6 +14,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Phone, MessageSquare, ChevronRight, ChevronLeft, Check, QrCode, AlertCircle, Bus, Download, Sparkles, Mail } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { jsPDF } from 'jspdf';
 import {
   generateQrCodeId,
   validateEmail,
@@ -441,33 +442,72 @@ export default function TravelerForm() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.8 }}
             onClick={() => {
-              // Creăm un canvas temporar pentru download
+              // Generează un PDF cu codul QR și codul propriu-zis dedesubt
               const svg = document.querySelector('.qr-pulse svg');
-              if (svg) {
+              if (!svg) return;
+
+              const svgData = new XMLSerializer().serializeToString(svg);
+              const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+              const url = URL.createObjectURL(svgBlob);
+              const img = new Image();
+              img.onload = () => {
+                // Desenează SVG-ul pe canvas la rezoluție mare
+                const size = 800;
                 const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
                 const ctx = canvas.getContext('2d');
-                const svgData = new XMLSerializer().serializeToString(svg);
-                const img = new Image();
-                const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(svgBlob);
-                img.onload = () => {
-                  canvas.width = 400;
-                  canvas.height = 400;
-                  ctx?.drawImage(img, 0, 0, 400, 400);
-                  const pngUrl = canvas.toDataURL('image/png');
-                  const link = document.createElement('a');
-                  link.download = `RATBV-${qrCodeId}.png`;
-                  link.href = pngUrl;
-                  link.click();
-                  URL.revokeObjectURL(url);
-                };
-                img.src = url;
-              }
+                if (ctx) {
+                  ctx.fillStyle = '#ffffff';
+                  ctx.fillRect(0, 0, size, size);
+                  ctx.drawImage(img, 0, 0, size, size);
+                }
+                URL.revokeObjectURL(url);
+
+                // Creează documentul PDF
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const qrSize = 90;
+                const centerX = (pageWidth - qrSize) / 2;
+                let y = 60;
+
+                // Titlu
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(18);
+                pdf.setTextColor(30, 64, 175);
+                pdf.text('RATBV Brasov - Codul tau unic', pageWidth / 2, y - 15, { align: 'center' });
+
+                // Codul QR
+                const qrDataUrl = canvas.toDataURL('image/png');
+                pdf.addImage(qrDataUrl, 'PNG', centerX, y, qrSize, qrSize);
+                y += qrSize + 12;
+
+                // Codul QR ca text, chiar sub imagine
+                pdf.setFont('courier', 'bold');
+                pdf.setFontSize(16);
+                pdf.setTextColor(30, 58, 138);
+                pdf.text(qrCodeId, pageWidth / 2, y, { align: 'center' });
+                y += 10;
+
+                // Instrucțiuni
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(11);
+                pdf.setTextColor(100, 116, 139);
+                pdf.text(
+                  'Prezinta acest cod la ghiseul RATBV pentru a ridica cele 3 calatorii gratuite.',
+                  pageWidth / 2,
+                  y,
+                  { align: 'center' }
+                );
+
+                pdf.save(`RATBV-${qrCodeId}.pdf`);
+              };
+              img.src = url;
             }}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 active:scale-95"
           >
             <Download size={20} />
-            Salvează codul QR
+            Salvează codul QR (PDF)
           </motion.button>
         </motion.div>
       </div>
