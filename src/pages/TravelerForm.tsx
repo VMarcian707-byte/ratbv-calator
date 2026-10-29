@@ -233,7 +233,7 @@ export default function TravelerForm() {
       }
     } catch (error) {
       console.warn('Verificare server indisponibilă, fallback la mod demo:', error);
-      const localCode = sessionStorage.getItem('ratbv_demo_otp_' + email.trim().toLowerCase()) || demoTestCode || '123456';
+      const localCode = sessionStorage.getItem('ratbv_demo_otp_' + email.trim().toLowerCase()) || demoTestCode || '596561';
       if (otpCode === localCode || otpCode === '123456') {
         await finalizeSuccessfulVerification();
       } else {
